@@ -89,7 +89,16 @@ def editable_df(df):
   )
   st.subheader('Linhas atualizadas: ')
   st.table(data=df_grid)
-    
+
+def clean_transform_df(df):
+    nan_value = float('NaN')
+    df_updated = df['NFE_NRONOTAFISCAL'].replace("", nan_value, inplace=True)
+    df_updated = df_updated.dropna(subset='NFE_NRONOTAFISCAL', inplace=True)
+    if df_updated['Dealer/Rep']:
+        df_updated = df_updated[['Dealer/Rep','NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
+    if not df_updated['Dealer/Rep']:
+        df_updated = df_updated[['NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
+    return df_updated
   
 if st.session_state.key:
   placeholder.empty()
@@ -101,7 +110,7 @@ if st.session_state.key:
   uploaded_file = c.file_uploader("Escolha o arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
 
   if uploaded_file:
-    print('subiu arquivo')
-    df = pd.read_csv(uploaded_file, sep=";", encoding='latin-1')
-    editable_df(df)
-    out = df.to_json(orient='records')[1:-1]
+    df = pd.read_csv(uploaded_file, sep=";", encoding='utf-8')
+    df_changed = clean_transform_df(df)
+    editable_df(df_changed)
+    out = df_changed.to_json(orient='records')[1:-1]
