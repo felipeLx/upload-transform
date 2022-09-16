@@ -23,8 +23,8 @@ auth = firebase.auth()
 db = firebase.database()
 storage = firebase.storage()
 
-st.set_page_config(page_title="Mapfre arquivos", page_icon="🧊")
-st.image("https://upload.wikimedia.org/wikipedia/commons/b/bf/Mapfre_logo.svg", width=200)
+st.set_page_config(page_title="Steris Sellout", page_icon="🧊")
+st.image("https://www.google.com/imgres?imgurl=https%3A%2F%2Ftukuz.com%2Fwp-content%2Fuploads%2F2021%2F03%2Fsteris-logo-vector.png&imgrefurl=https%3A%2F%2Ftukuz.com%2Fsteris-logo-vector-svg%2F&tbnid=XGJFOad3TnHxXM&vet=12ahUKEwiI6LOXmpr6AhUKr5UCHTs9BTAQMygAegUIARDHAQ..i&docid=QTgzIXgyCYMCqM&w=900&h=500&q=steris%20logo&ved=2ahUKEwiI6LOXmpr6AhUKr5UCHTs9BTAQMygAegUIARDHAQ", width=200)
 
 placeholder = st.empty()
 
@@ -105,5 +105,3 @@ if st.session_state.key:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin-1')
     editable_df(df)
     out = df.to_json(orient='records')[1:-1]
-  
-
