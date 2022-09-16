@@ -75,7 +75,7 @@ def editable_df(df):
   sel_mode = st.radio('Selecione o tipo', options=['single','multiple'])
   gd.configure_selection(selection_mode=sel_mode, use_checkbox=True)
   grid_options = gd.build()
-  grid_table = AgGrid(df, theme='dark', try_to_convert_back_to_original_types=False, gridOptions=grid_options, update_mode= GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED, allow_unsafe_jscode=True, height=500 )
+  grid_table = AgGrid(df, try_to_convert_back_to_original_types=False, gridOptions=grid_options, update_mode= GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED, allow_unsafe_jscode=True, height=500 )
   sel_row = grid_table['selected_rows']
   
   df_grid = pd.DataFrame(sel_row)
@@ -95,7 +95,7 @@ if st.session_state.key:
   placeholder.empty()
   c = st.container()
   # ---- MAINPAGE ----
-  c.title("Arquivo Texto Mapfre")
+  c.title("Arquivo em formato CSV - Steris")
   c.markdown("""---""")
 
   uploaded_file = c.file_uploader("Escolha o arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
