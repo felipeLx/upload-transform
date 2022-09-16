@@ -3,17 +3,9 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridUpdateMode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
+from google.cloud import firestore
 
-firebaseConfig = {
-  'apiKey': "AIzaSyDmaICrJnzE6_mkwsFLwMGDHys-a-5cL1s",
-  'authDomain': "streamlit-firebase-mapfre.firebaseapp.com",
-  'projectId': "streamlit-firebase-mapfre",
-  'databaseURL': "https://streamlit-firebase-mapfre-default-rtdb.firebaseio.com/",
-  'storageBucket': "streamlit-firebase-mapfre.appspot.com",
-  'messagingSenderId': "132852245968",
-  'appId': "1:132852245968:web:231b2521c6870cbbccc5d5",
-  'measurementId': "G-TWNT2X9R59"
-}
+firebaseConfig = st.secrets['firebaseConfig']
           
 # firebase authentication
 firebase = pyrebase.initialize_app(firebaseConfig)
