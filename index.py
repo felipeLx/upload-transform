@@ -82,7 +82,7 @@ def editable_df(df):
   st.subheader('Linhas atualizadas: ')
   st.table(data=df_grid)
 
-@st.cache
+# @st.cache
 def clean_transform_df(df):
     nan_value = float('NaN')
     df['NFE_NRONOTAFISCAL'].replace("", nan_value, inplace=True)
@@ -108,4 +108,4 @@ if st.session_state.key:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin1')
     df_changed = clean_transform_df(df)
     editable_df(df_changed)
-    out = df_changed.to_json(orient='records')[1:-1]
+    #out = df_changed.to_json(orient='records')[1:-1]
