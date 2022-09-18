@@ -43,8 +43,8 @@ if ~st.session_state.key:
           else:
             # Login
             user = auth.sign_in_with_email_and_password(email, password)
-            db.child(user['localId']).child("Handle").set(email)
-            db.child(user['localId']).child("ID").set(user['localId'])
+            # db.child(user['localId']).child("Handle").set(email)
+            # db.child(user['localId']).child("ID").set(user['localId'])
   except ValueError:
     st.error('Verifique os dados: email e senha', icon="⚠️")
     user = ''
