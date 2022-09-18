@@ -83,10 +83,8 @@ def editable_df(df):
   st.table(data=df_grid)
 
 def clean_transform_df(df):
-  print(df.head())
   nan_value = float('NaN')
-  csv = df.to_csv().encode('utf-8')
-  df_updated = csv['NFE_NRONOTAFISCAL'].replace("", nan_value, inplace=True)
+  df_updated = df['NFE_NRONOTAFISCAL'].replace("", nan_value, inplace=True)
   df_updated = df_updated.dropna(subset='NFE_NRONOTAFISCAL', inplace=True)
   if df_updated['Dealer/Rep']:
       df_updated = df_updated[['Dealer/Rep','NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
