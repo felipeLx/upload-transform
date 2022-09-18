@@ -52,13 +52,13 @@ if ~st.session_state.key:
     placeholder.empty()
     
 # download dataframe
-@st.cache
+@st.cache(suppress_st_warning=True)
 def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
     return df.to_csv(sep=';', encoding='latin1', header=True, decimal=',')
 
 # editable table
-@st.cache
+@st.cache(suppress_st_warning=True)
 def editable_df(df):
   gd = GridOptionsBuilder.from_dataframe(df)
   gd.configure_pagination(enabled=True)
@@ -82,15 +82,38 @@ def editable_df(df):
   st.subheader('Linhas atualizadas: ')
   st.table(data=df_grid)
 
+st.cache(suppress_st_warning=True)
+def transform_coluns(df):
+  dataframe = df
+  dataframe['NFE_DATAEMISSAO'] = dataframe['NFE_DATAEMISSAO'].str.replace("00:00", "")
+  # dataframe['NFE_DATAEMISSAO'] = pd.to_datetime(dataframe['NFE_DATAEMISSAO'], format='%d/%m/%Y')
+  dataframe['NFE_DEST_CNPJ'] = dataframe['NFE_DEST_CNPJ'].str.replace("[./-]", "")
+  dataframe['DEST_CODIGOCFOP'] = dataframe['DEST_CODIGOCFOP'].str.replace("[.,]", "")
+  dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("[.,-<>()/0123456789\t]", "")
+  dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ê", "E")
+  dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ã", "A")
+  dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Õ", "O")
+  dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ç", "C")
+  dataframe = dataframe.rename(columns={'NFE_DEST_RAZAOSOCIAL': 'RAZAO_SOCIAL'})
+  return dataframe
+
+
+st.cache(suppress_st_warning=True)
 def clean_transform_df(df):
+  dataframe = df
   nan_value = float('NaN')
-  df_updated = df['NFE_NRONOTAFISCAL'].replace("", nan_value, inplace=True)
-  df_updated = df_updated.dropna(subset='NFE_NRONOTAFISCAL', inplace=True)
-  if df_updated['Dealer/Rep']:
-      df_updated = df_updated[['Dealer/Rep','NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
-  if not df_updated['Dealer/Rep']:
-      df_updated = df_updated[['NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
-  return df_updated
+  dataframe.replace("", nan_value, inplace=True)
+  dataframe.dropna(subset='NFE_NRONOTAFISCAL', inplace=True)
+  print(dataframe.head())
+  # df_updated = dataframe
+  if 'Dealer/Rep' in dataframe.columns:
+      df_updated = dataframe[['Dealer/Rep','NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
+      df_cleaned = transform_coluns(df_updated)
+      return df_cleaned
+  else:
+      df_updated = dataframe[['NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
+      df_cleaned = transform_coluns(df_updated)
+      return df_cleaned
   
 if st.session_state.key:
   placeholder.empty()
