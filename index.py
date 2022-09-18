@@ -127,7 +127,7 @@ if st.session_state.key:
   uploaded_file = c.file_uploader("Clique aqui para subir o seu arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
 
   if uploaded_file:
-    df = pd.read_csv(uploaded_file, sep=";", encoding='latin1')
+    df = pd.read_csv(uploaded_file, sep=";", encoding='latin1', dtype='str')
     df_changed = clean_transform_df(df)
     editable_df(df_changed)
     #out = df_changed.to_json(orient='records')[1:-1]
