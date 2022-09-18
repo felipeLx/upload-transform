@@ -82,7 +82,6 @@ def editable_df(df):
   st.subheader('Linhas atualizadas: ')
   st.table(data=df_grid)
 
-@st.cache
 def clean_transform_df(df):
   print(df.head())
   nan_value = float('NaN')
