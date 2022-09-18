@@ -15,7 +15,7 @@ db = firebase.database()
 storage = firebase.storage()
 
 st.set_page_config(page_title="Steris Sellout", page_icon="🧊")
-st.image("https://www.google.com/imgres?imgurl=https%3A%2F%2Ftukuz.com%2Fwp-content%2Fuploads%2F2021%2F03%2Fsteris-logo-vector.png&imgrefurl=https%3A%2F%2Ftukuz.com%2Fsteris-logo-vector-svg%2F&tbnid=XGJFOad3TnHxXM&vet=12ahUKEwiI6LOXmpr6AhUKr5UCHTs9BTAQMygAegUIARDHAQ..i&docid=QTgzIXgyCYMCqM&w=900&h=500&q=steris%20logo&ved=2ahUKEwiI6LOXmpr6AhUKr5UCHTs9BTAQMygAegUIARDHAQ", width=200)
+st.image("steris-logo-vector.png", width=200)
 
 placeholder = st.empty()
 
@@ -58,6 +58,7 @@ def convert_df(df):
     return df.to_csv(sep=';', encoding='latin1', header=True, decimal=',')
 
 # editable table
+@st.cache
 def editable_df(df):
   gd = GridOptionsBuilder.from_dataframe(df)
   gd.configure_pagination(enabled=True)
@@ -81,6 +82,7 @@ def editable_df(df):
   st.subheader('Linhas atualizadas: ')
   st.table(data=df_grid)
 
+@st.cache
 def clean_transform_df(df):
     nan_value = float('NaN')
     df['NFE_NRONOTAFISCAL'].replace("", nan_value, inplace=True)
@@ -97,6 +99,8 @@ if st.session_state.key:
   # ---- MAINPAGE ----
   c.title("Arquivo em formato CSV - Steris")
   c.markdown("""---""")
+  file = 'produto.csv'
+  c.download_button('Lista de Produtos Steris', data=file, file_name='Produtos', mime='arquivo csv')
 
   uploaded_file = c.file_uploader("Escolha o arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
 
