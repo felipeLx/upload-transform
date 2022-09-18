@@ -99,10 +99,10 @@ if st.session_state.key:
   # ---- MAINPAGE ----
   c.title("Arquivo em formato CSV - Steris")
   c.markdown("""---""")
-  file = 'produto.csv'
+  file = './produto.csv'
   c.download_button('Lista de Produtos Steris', data=file, file_name='Produtos.csv', mime='txt/csv')
 
-  uploaded_file = c.file_uploader("Escolha o arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
+  uploaded_file = c.file_uploader("Clique aqui para subir o seu arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
 
   if uploaded_file:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin1')
