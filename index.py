@@ -64,7 +64,7 @@ def editable_df(df):
   gd.configure_pagination(enabled=True)
   gd.configure_default_column(editable=True, groupable=True, headerCheckboxSelection=True)
   
-  sel_mode = st.radio('Selecione o tipo', options=['single','multiple'])
+  sel_mode = st.radio('Selecione o tipo para alterar as linha(s)', options=['single','multiple'])
   gd.configure_selection(selection_mode=sel_mode, use_checkbox=True)
   grid_options = gd.build()
   grid_table = AgGrid(df, try_to_convert_back_to_original_types=False, gridOptions=grid_options, update_mode= GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED, allow_unsafe_jscode=True, height=500 )
@@ -79,32 +79,35 @@ def editable_df(df):
     file_name='dados_alterados.csv',
     mime='text/csv',  
   )
-  st.subheader('Linhas atualizadas: ')
+  st.subheader('Linhas que foram modificadas: ')
   st.table(data=df_grid)
 
-st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True)
 def transform_coluns(df):
   dataframe = df
   dataframe['NFE_DATAEMISSAO'] = dataframe['NFE_DATAEMISSAO'].str.replace("00:00", "")
   # dataframe['NFE_DATAEMISSAO'] = pd.to_datetime(dataframe['NFE_DATAEMISSAO'], format='%d/%m/%Y')
   dataframe['NFE_DEST_CNPJ'] = dataframe['NFE_DEST_CNPJ'].str.replace("[./-]", "")
   dataframe['DEST_CODIGOCFOP'] = dataframe['DEST_CODIGOCFOP'].str.replace("[.,]", "")
+  dataframe['DEST_CODIGOCFOP'] = dataframe['DEST_CODIGOCFOP'].str[-4:]
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("[.,-<>()/0123456789\t]", "")
+  dataframe['DEST_CODIGOPRODUTO_STERIS'] = dataframe['DEST_CODIGOPRODUTO_STERIS'].str.strip()
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ê", "E")
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ã", "A")
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Õ", "O")
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ç", "C")
+  dataframe['DEST_QTDEPRODUTO'] = dataframe['DEST_QTDEPRODUTO'].str.replace(",", ".").astype(float)
   dataframe = dataframe.rename(columns={'NFE_DEST_RAZAOSOCIAL': 'RAZAO_SOCIAL'})
   return dataframe
 
 
-st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True)
 def clean_transform_df(df):
   dataframe = df
   nan_value = float('NaN')
   dataframe.replace("", nan_value, inplace=True)
   dataframe.dropna(subset='NFE_NRONOTAFISCAL', inplace=True)
-  print(dataframe.head())
+  
   # df_updated = dataframe
   if 'Dealer/Rep' in dataframe.columns:
       df_updated = dataframe[['Dealer/Rep','NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
@@ -114,6 +117,22 @@ def clean_transform_df(df):
       df_updated = dataframe[['NFE_DATAEMISSAO','NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ','NFE_DEST_RAZAOSOCIAL','NFE_DEST_ESTADO','DEST_QTDEPRODUTO','DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
       df_cleaned = transform_coluns(df_updated)
       return df_cleaned
+
+@st.cache(suppress_st_warning=True)
+def check_df(df):
+  dataframe = df
+  prod_list = []
+  with open('produto.csv', 'rb') as file:
+    df_prod = pd.read_csv(file, header=0, usecols=['Product Number'], encoding='latin1', sep=";")
+    product_list = df_prod['Product Number'].tolist()
+    df_errors = dataframe[~dataframe['DEST_CODIGOPRODUTO_STERIS'].isin(product_list)]
+    list_of_errors = df_errors['DEST_CODIGOPRODUTO_STERIS'].tolist()
+    list_of_errors = set(list_of_errors)
+    st.warning('Lista abaixo cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
+    print('list of errors', list_of_errors)
+    st.subheader('Lista de Produtos não identificados: ')
+    st.table(data=list_of_errors)
+
   
 if st.session_state.key:
   placeholder.empty()
@@ -129,5 +148,6 @@ if st.session_state.key:
   if uploaded_file:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin1', dtype='str')
     df_changed = clean_transform_df(df)
+    checked_df = check_df(df_changed)
     editable_df(df_changed)
     #out = df_changed.to_json(orient='records')[1:-1]
