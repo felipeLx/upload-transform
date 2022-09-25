@@ -63,7 +63,7 @@ if st.session_state.key:
   _funct = st.sidebar.radio(label='Alterar ou Apagar linhas', options=['Alterar', 'Apagar'])
 
 # editable table
-@st.cache(suppress_st_warning=True, allow_output_mutation=True)
+# @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def editable_df(df):
   dataframe = df
   gd = GridOptionsBuilder.from_dataframe(dataframe)
@@ -156,6 +156,7 @@ def clean_transform_df(df):
       return df_cleaned
 
 # verify if some Product code not exist in the Steris list code
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def check_df(df):
   dataframe = df
   with open('produto.csv', 'rb') as file:
