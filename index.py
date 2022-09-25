@@ -63,6 +63,7 @@ if st.session_state.key:
   _funct = st.sidebar.radio(label='Alterar ou Apagar linhas', options=['Alterar', 'Apagar'])
 
 # editable table
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def editable_df(df):
   dataframe = df
   gd = GridOptionsBuilder.from_dataframe(dataframe)
@@ -118,7 +119,7 @@ def editable_df(df):
     mime='text/csv',  
   )
 
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def transform_coluns(df):
   dataframe = df
   dataframe['NFE_DATAEMISSAO'] = dataframe['NFE_DATAEMISSAO'].str.replace("00:00", "")
@@ -153,7 +154,7 @@ def clean_transform_df(df):
       df_cleaned = transform_coluns(df_updated)
       return df_cleaned
 
-# @st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def check_df(df):
   dataframe = df
   with open('produto.csv', 'rb') as file:
