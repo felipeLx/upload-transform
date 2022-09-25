@@ -83,7 +83,6 @@ def editable_df(df):
     sel_row = grid_table['data']
     df_grid = pd.DataFrame(sel_row)
     dataframe.update(df_grid)
-    check_df(dataframe)
   
   if _funct == 'Apagar':
     js = JsCode("""
@@ -111,9 +110,9 @@ def editable_df(df):
     sel_row = grid_table['data']
     df_grid = pd.DataFrame(sel_row)
     dataframe.update(df_grid)  
-    check_df(dataframe)
   
   csv = convert_df(dataframe)
+  check_df(csv)
   st.download_button(
     label="Download tabela modificada como CSV",
     data=csv,
