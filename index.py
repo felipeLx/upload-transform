@@ -112,7 +112,7 @@ def editable_df(df):
     dataframe.update(df_grid)  
   
   csv = convert_df(dataframe)
-  check_df(dataframe)
+  # check_df(dataframe)
   st.download_button(
     label="Download tabela modificada como CSV",
     data=csv,
