@@ -54,7 +54,7 @@ if ~st.session_state.key:
     placeholder.empty()
     
 # download dataframe
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
     return df.to_csv(sep=';', encoding='latin1', header=True, decimal=',')
@@ -137,6 +137,7 @@ def transform_coluns(df):
   dataframe = dataframe.rename(columns={'NFE_DEST_RAZAOSOCIAL': 'RAZAO_SOCIAL'})
   return dataframe
 
+# data clean and transformation
 @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def clean_transform_df(df):
   dataframe = df
@@ -154,7 +155,7 @@ def clean_transform_df(df):
       df_cleaned = transform_coluns(df_updated)
       return df_cleaned
 
-@st.cache(suppress_st_warning=True, allow_output_mutation=True)
+# verify if some Product code not exist in the Steris list code
 def check_df(df):
   dataframe = df
   with open('produto.csv', 'rb') as file:
@@ -168,7 +169,8 @@ def check_df(df):
     st.subheader('Lista de Produtos não identificados: ')
     st.table(data=df_errors)
 
-  
+
+# start render front page if user exist
 if st.session_state.key:
   placeholder.empty()
   c = st.container()
