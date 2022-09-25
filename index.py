@@ -1,8 +1,10 @@
+# from sharepoint import SharePoint
 import pyrebase
 import streamlit as st
 import pandas as pd
-from st_aggrid import AgGrid, GridUpdateMode
+from st_aggrid import AgGrid, GridUpdateMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
+
 
 firebaseConfig = st.secrets['firebaseConfig']
           
@@ -57,30 +59,64 @@ def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
     return df.to_csv(sep=';', encoding='latin1', header=True, decimal=',')
 
+if st.session_state.key:
+  _funct = st.sidebar.radio(label='Alterar ou Apagar linhas', options=['Alterar', 'Apagar'])
+
 # editable table
-@st.cache(suppress_st_warning=True)
 def editable_df(df):
-  gd = GridOptionsBuilder.from_dataframe(df)
+  dataframe = df
+  gd = GridOptionsBuilder.from_dataframe(dataframe)
   gd.configure_pagination(enabled=True)
-  gd.configure_default_column(editable=True, groupable=True, headerCheckboxSelection=True)
+  gd.configure_default_column(editable=True, groupable=True)
   
-  sel_mode = st.radio('Selecione o tipo para alterar as linha(s)', options=['single','multiple'])
-  gd.configure_selection(selection_mode=sel_mode, use_checkbox=True)
-  grid_options = gd.build()
-  grid_table = AgGrid(df, try_to_convert_back_to_original_types=False, gridOptions=grid_options, update_mode= GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED, allow_unsafe_jscode=True, height=500 )
-  sel_row = grid_table['selected_rows']
+  if _funct == 'Alterar':
+    grid_options = gd.build()
+    grid_table = AgGrid(dataframe, 
+                try_to_convert_back_to_original_types=False, 
+                gridOptions=grid_options, 
+                update_mode= GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED, allow_unsafe_jscode=True, 
+                height=500, 
+                width='100%',
+                reload_data = False,
+                theme='streamlit')
+    sel_row = grid_table['data']
+    df_grid = pd.DataFrame(sel_row)
+    dataframe.update(df_grid)
   
-  df_grid = pd.DataFrame(sel_row)
+  if _funct == 'Apagar':
+    js = JsCode("""
+    function(e) {
+        let api = e.api;
+        let sel = api.getSelectedRows();
+        api.applyTransaction({remove: sel})    
+    };
+    """     
+    )  
+    
+    gd.configure_selection(selection_mode= 'single')
+    gd.configure_grid_options(onRowSelected = js,pre_selected_rows=[])
+    gridOptions = gd.build()
+    grid_table = AgGrid(dataframe, 
+                try_to_convert_back_to_original_types=False,
+                gridOptions = gridOptions, 
+                height=500,
+                width='100%',
+                theme = "streamlit",
+                update_mode = GridUpdateMode.SELECTION_CHANGED,
+                reload_data = False,
+                allow_unsafe_jscode=True,
+                )
+    sel_row = grid_table['data']
+    df_grid = pd.DataFrame(sel_row)
+    dataframe.update(df_grid)  
   
-  csv = convert_df(df)
+  csv = convert_df(dataframe)
   st.download_button(
     label="Download tabela modificada como CSV",
     data=csv,
     file_name='dados_alterados.csv',
     mime='text/csv',  
   )
-  st.subheader('Linhas que foram modificadas: ')
-  st.table(data=df_grid)
 
 @st.cache(suppress_st_warning=True)
 def transform_coluns(df):
@@ -100,8 +136,7 @@ def transform_coluns(df):
   dataframe = dataframe.rename(columns={'NFE_DEST_RAZAOSOCIAL': 'RAZAO_SOCIAL'})
   return dataframe
 
-
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def clean_transform_df(df):
   dataframe = df
   nan_value = float('NaN')
@@ -118,20 +153,19 @@ def clean_transform_df(df):
       df_cleaned = transform_coluns(df_updated)
       return df_cleaned
 
-@st.cache(suppress_st_warning=True)
+# @st.cache(suppress_st_warning=True)
 def check_df(df):
   dataframe = df
-  prod_list = []
   with open('produto.csv', 'rb') as file:
     df_prod = pd.read_csv(file, header=0, usecols=['Product Number'], encoding='latin1', sep=";")
-    product_list = df_prod['Product Number'].tolist()
+    product_list = set(df_prod['Product Number'].tolist())
     df_errors = dataframe[~dataframe['DEST_CODIGOPRODUTO_STERIS'].isin(product_list)]
-    list_of_errors = df_errors['DEST_CODIGOPRODUTO_STERIS'].tolist()
-    list_of_errors = set(list_of_errors)
-    st.warning('Lista abaixo cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
-    print('list of errors', list_of_errors)
+    df_errors = df_errors['DEST_CODIGOPRODUTO_STERIS']
+    
+    st.warning('Lista abaixo com a linha e código cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
+    # print('list of errors', list_of_errors)
     st.subheader('Lista de Produtos não identificados: ')
-    st.table(data=list_of_errors)
+    st.table(data=df_errors)
 
   
 if st.session_state.key:
@@ -147,7 +181,11 @@ if st.session_state.key:
 
   if uploaded_file:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin1', dtype='str')
+    #df['index'] = np.arange(len(df))+1
+    #print(df.info())
     df_changed = clean_transform_df(df)
     checked_df = check_df(df_changed)
     editable_df(df_changed)
+      
+    
     #out = df_changed.to_json(orient='records')[1:-1]
