@@ -156,7 +156,7 @@ def clean_transform_df(df):
       return df_cleaned
 
 # verify if some Product code not exist in the Steris list code
-# @st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=True)
 def check_df(df):
   dataframe = df
   with open('produto.csv', 'rb') as file:
