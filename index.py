@@ -204,7 +204,7 @@ def check_df(df):
     st.warning('Lista abaixo com a linha e código cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
     # print('list of errors', list_of_errors)
     st.subheader('Lista de Produtos não identificados, ou coluna de quantidade ou razão social em branco: ')
-    st.table(data=df_all_errors)
+    return st.table(data=df_all_errors)
 
 
 # start render front page if user exist
