@@ -204,7 +204,7 @@ def check_df(df):
     st.warning('Lista abaixo com a linha e código cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
     # print('list of errors', list_of_errors)
     st.subheader('Lista de Produtos não identificados, ou coluna de quantidade ou razão social em branco: ')
-    return st.table(data=df_all_errors)
+    st.table(data=df_all_errors)
 
 
 # start render front page if user exist
@@ -222,7 +222,7 @@ if st.session_state.key:
   if uploaded_file:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin1', dtype='str')
     df_changed = clean_transform_df(df)
-    checked_df = check_df(df_changed)
+    check_df(df_changed)
     editable_df(df_changed)
       
     
