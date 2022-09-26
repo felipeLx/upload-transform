@@ -221,9 +221,14 @@ if st.session_state.key:
 
   if uploaded_file:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin1', dtype='str')
-    df_changed = clean_transform_df(df)
-    editable_df(df_changed)
-    check_df(df_changed)
+    try:
+      df_changed = clean_transform_df(df)
+      check_df(df_changed)
+      editable_df(df_changed)
+    except ValueError as e:
+      print('Value Error', e)
+    except:
+      print('Something is going wrong')
       
     
     #out = df_changed.to_json(orient='records')[1:-1]
