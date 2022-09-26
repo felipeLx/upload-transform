@@ -4,9 +4,15 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridUpdateMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+import smtplib
 
 
 firebaseConfig = st.secrets['firebaseConfig']
+emailConfig = st.secrets['emailConfig']
           
 # firebase authentication
 firebase = pyrebase.initialize_app(firebaseConfig)
@@ -58,6 +64,31 @@ if ~st.session_state.key:
 def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
     return df.to_csv(sep=';', encoding='latin1', header=True, decimal=',')
+
+def send_email(user, attach):
+  email_from = user
+  csv = attach
+  message = MIMEMultipart('alternative')
+  message['Subject'] = 'Arquivo Sellout modificado'
+  message['From'] = 'felipe@beanalytic.com.br'
+  message['To'] = 'felipe@beanalytic.com.br'
+
+  message.attach(MIMEText('<h1 style="color: blue">Olá, </a><p>Segue em anexo o Sellout pronto para o Tableau Prep / Dashboard.</p>', 'html'))
+
+  attach_file_name = 'sellout.csv'
+  attach_file = csv
+  payload = MIMEBase('application', 'octate-stream')
+  payload.set_payload(attach_file)
+  encoders.encode_base64(payload) #encode the attachment
+  #add payload header with filename
+  payload.add_header('Content-Decomposition', 'attachment', filename=attach_file_name)
+  message.attach(payload)
+  server = smtplib.SMTP('smtp-legacy.office365.com', 587)
+  
+  server.starttls()
+  server.login(emailConfig.email, emailConfig.password)
+  server.sendmail(emailConfig.email, email_from, message.as_string())
+  server.quit()
 
 if st.session_state.key:
   _funct = st.sidebar.radio(label='Alterar ou Apagar linhas', options=['Alterar', 'Apagar'])
@@ -112,13 +143,14 @@ def editable_df(df):
     dataframe.update(df_grid)  
   
   csv = convert_df(dataframe)
-  # check_df(dataframe)
-  st.download_button(
-    label="Download tabela modificada como CSV",
-    data=csv,
-    file_name='dados_alterados.csv',
-    mime='text/csv',  
+  email = st.text_input('Informar o email', 'exemplo@email.com')
+  st.write('Informar o email para o envio do arquivo para Steris')
+  st.button(
+    label='Enviar arquivo para Steris',
+    key=email,
+    on_click=send_email(email, csv)
   )
+  # st.download_button(label="Download tabela modificada como CSV",data=csv, file_name='dados_alterados.csv',mime='text/csv')
 
 @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def transform_coluns(df):
@@ -160,16 +192,19 @@ def clean_transform_df(df):
 # @st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=True, persist=False)
 def check_df(df):
   dataframe = df
+  #dataframe = dataframe.fillna(value=0, axis=0)
+  print(dataframe.isna().sum())
   with open('produto.csv', 'rb') as file:
     df_prod = pd.read_csv(file, header=0, usecols=['Product Number'], encoding='latin1', sep=";")
     product_list = set(df_prod['Product Number'].tolist())
     df_errors = dataframe[~dataframe['DEST_CODIGOPRODUTO_STERIS'].isin(product_list)]
-    df_errors = df_errors['DEST_CODIGOPRODUTO_STERIS']
+    df_all_errors = pd.concat([df_errors, dataframe[dataframe['RAZAO_SOCIAL'].isnull()], dataframe[dataframe['DEST_QTDEPRODUTO'].isnull()]])
+    # df_errors = df_errors['DEST_CODIGOPRODUTO_STERIS'] | dataframe[dataframe['RAZAO_SOCIAL'].isnull()]
     
     st.warning('Lista abaixo com a linha e código cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
     # print('list of errors', list_of_errors)
-    st.subheader('Lista de Produtos não identificados: ')
-    st.table(data=df_errors)
+    st.subheader('Lista de Produtos não identificados, ou coluna de quantidade ou razão social em branco: ')
+    st.table(data=df_all_errors)
 
 
 # start render front page if user exist
@@ -186,8 +221,6 @@ if st.session_state.key:
 
   if uploaded_file:
     df = pd.read_csv(uploaded_file, sep=";", encoding='latin1', dtype='str')
-    #df['index'] = np.arange(len(df))+1
-    #print(df.info())
     df_changed = clean_transform_df(df)
     checked_df = check_df(df_changed)
     editable_df(df_changed)
