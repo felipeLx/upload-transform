@@ -189,8 +189,8 @@ def transform_coluns(df):
 def clean_transform_df(df):
   dataframe = df
   nan_value = float('NaN')
-  dataframe.replace("", nan_value, inplace=True)
-  dataframe.dropna(subset='NFE_NRONOTAFISCAL', inplace=True)
+  dataframe = dataframe.replace("", nan_value, inplace=True)
+  # dataframe.dropna(subset='NFE_NRONOTAFISCAL', inplace=True)
   
   # df_updated = dataframe
   if 'Dealer/Rep' in dataframe.columns:
