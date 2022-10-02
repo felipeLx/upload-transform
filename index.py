@@ -4,16 +4,21 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridUpdateMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
+import email, smtplib, ssl
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
 import smtplib
-
+# import csv
 
 firebaseConfig = st.secrets['firebaseConfig']
 emailConfig = st.secrets['emailConfig']
-          
+
+# google drive folder
+# url = 'https://drive.google.com/drive/folders/1jZ5c2974_80uDQwkAnGCequLsgNYWmMx?usp=sharing'
+# path = 'https://drive.google.com/uc?export=download&id='+url.split('/')[-2]
+
 # firebase authentication
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -59,37 +64,54 @@ if ~st.session_state.key:
     st.session_state.key = False
     placeholder.empty()
     
-# download dataframe
+# convert dataframe to csv file
 @st.cache(suppress_st_warning=True, allow_output_mutation=True)
-def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv(sep=';', encoding='latin1', header=True, decimal=',')
-
-def send_email(user, attach):
-  email_from = user
-  csv = attach
-  message = MIMEMultipart('alternative')
-  message['Subject'] = 'Arquivo Sellout modificado'
-  message['From'] = 'felipe@beanalytic.com.br'
+def convert_df_to_csv(df):
+    csv_file = df.to_csv('sellout.csv', sep=';', encoding='utf-8', header=True, decimal=',')
+    return csv_file
+  
+def send_email(user_input):
+  # print(type(attached))
+  email = user_input # st.text_input('Informar o email', 'exemplo@email.com')
+  
+  file = 'sellout.csv'# pd.read_csv(attached, index_col=[0], header=0, sep=';', dtype='str')
+# print(file.head())
+  
+  message = MIMEMultipart()
+  message['Subject'] = f'Arquivo Sellout modificado por {email}'
+  message['From'] = 'sistema@beanalytic.com.br'
   message['To'] = 'felipe@beanalytic.com.br'
-
+  message['Bcc'] = 'felipe@beanalytic.com.br'
   message.attach(MIMEText('<h1 style="color: blue">Olá, </a><p>Segue em anexo o Sellout pronto para o Tableau Prep / Dashboard.</p>', 'html'))
 
-  attach_file_name = 'sellout.csv'
-  attach_file = csv
-  payload = MIMEBase('application', 'octate-stream')
-  payload.set_payload(attach_file)
+  with open(file, 'rb') as attachment:
+    payload = MIMEBase('application', 'octat-stream')
+    payload.set_payload(attachment.read())
+    
   encoders.encode_base64(payload) #encode the attachment
   #add payload header with filename
-  payload.add_header('Content-Decomposition', 'attachment', filename=attach_file_name)
+  payload.add_header('Content-Disposition', f'attachment; filename={file}')
   message.attach(payload)
-  server = smtplib.SMTP('smtp-legacy.office365.com', 587)
-  
-  server.starttls()
-  server.login(emailConfig.email, emailConfig.password)
-  server.sendmail(emailConfig.email, email_from, message.as_string())
-  server.quit()
+  # start server
+  # context = ssl.create_default_context()
+  try:
+    with smtplib.SMTP('smtp-legacy.office365.com', 587) as server:
+      server.starttls()
+      print('server on') 
+      server.login(emailConfig.email, emailConfig.password)
+      server.sendmail(
+        emailConfig.email, 
+        'felipe@beanalytic.com.br', 
+        message.as_string())
 
+      attachment.close()
+      server.quit()
+      st.balloons()
+      return True
+  except Exception:
+    st.warning('Não foi possível enviar o email para Steris, por favor entrar em contato com Steris para informar', icon="⚠️")
+    
+    
 if st.session_state.key:
   _funct = st.sidebar.radio(label='Alterar ou Apagar linhas', options=['Alterar', 'Apagar'])
 
@@ -141,16 +163,8 @@ def editable_df(df):
     sel_row = grid_table['data']
     df_grid = pd.DataFrame(sel_row)
     dataframe.update(df_grid)  
-  
-  csv = convert_df(dataframe)
-  email = st.text_input('Informar o email', 'exemplo@email.com')
-  st.write('Informar o email para o envio do arquivo para Steris')
-  st.button(
-    label='Enviar arquivo para Steris',
-    key=email,
-    on_click=send_email(email, csv)
-  )
-  # st.download_button(label="Download tabela modificada como CSV",data=csv, file_name='dados_alterados.csv',mime='text/csv')
+  csv = convert_df_to_csv(dataframe)
+  return csv
 
 @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def transform_coluns(df):
@@ -193,7 +207,6 @@ def clean_transform_df(df):
 def check_df(df):
   dataframe = df
   #dataframe = dataframe.fillna(value=0, axis=0)
-  print(dataframe.isna().sum())
   with open('produto.csv', 'rb') as file:
     df_prod = pd.read_csv(file, header=0, usecols=['Product Number'], encoding='latin1', sep=";")
     product_list = set(df_prod['Product Number'].tolist())
@@ -202,7 +215,6 @@ def check_df(df):
     # df_errors = df_errors['DEST_CODIGOPRODUTO_STERIS'] | dataframe[dataframe['RAZAO_SOCIAL'].isnull()]
     
     st.warning('Lista abaixo com a linha e código cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
-    # print('list of errors', list_of_errors)
     st.subheader('Lista de Produtos não identificados, ou coluna de quantidade ou razão social em branco: ')
     return st.table(data=df_all_errors)
 
@@ -224,11 +236,27 @@ if st.session_state.key:
     try:
       df_changed = clean_transform_df(df)
       check_df(df_changed)
-      editable_df(df_changed)
+      csv = editable_df(df_changed)
+
+      with st.form("my_form"):
+        email = st.text_input('Informar o email', 'exemplo@email.com')
+        submitted = st.form_submit_button("Enviar e-mail para Steris")
+        st.write('Informar o email para o envio do arquivo para Steris')
+        if submitted:
+          email_sent = send_email(email)
+          if email_sent:
+            st.success('Email enviado com Sucesso!', icon="✅")
+          
     except ValueError as e:
       print('Value Error', e)
-    except:
-      print('Something is going wrong')
+    except NameError:
+      print('Something is going wrong', NameError)
+    except TypeError:
+      print("Type Error", TypeError)
+    except RuntimeError:
+      print("Runtime", RuntimeError)
+    except Exception as e:
+      print("none of above", e)
       
     
     #out = df_changed.to_json(orient='records')[1:-1]
