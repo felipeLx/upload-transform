@@ -211,7 +211,7 @@ def check_df(df):
     df_prod = pd.read_csv(file, header=0, usecols=['Product Number'], encoding='latin1', sep=";")
     product_list = set(df_prod['Product Number'].tolist())
     df_errors = dataframe[~dataframe['DEST_CODIGOPRODUTO_STERIS'].isin(product_list)]
-    df_all_errors = pd.concat([df_errors, dataframe[dataframe['RAZAO_SOCIAL'] == ""], dataframe[dataframe['DEST_QTDEPRODUTO'] == ""]])
+    df_all_errors = pd.concat([df_errors, dataframe[dataframe['RAZAO_SOCIAL'].isnull()], dataframe[dataframe['DEST_QTDEPRODUTO'].isnull()]])
     # df_errors = df_errors['DEST_CODIGOPRODUTO_STERIS'] | dataframe[dataframe['RAZAO_SOCIAL'].isnull()]
     
     st.warning('Lista abaixo com a linha e código cujo Código de Produto Steris não foi encontrado. Baixe a lista de Produtos Steris', icon="⚠️")
