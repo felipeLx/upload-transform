@@ -135,7 +135,7 @@ def editable_df(df):
                 theme='streamlit')
     sel_row = grid_table['data']
     df_grid = pd.DataFrame(sel_row)
-    dataframe.update(df_grid)
+    dataframe.update(df_grid, overwrite=True)
   
   if _funct == 'Apagar':
     js = JsCode("""
@@ -162,7 +162,8 @@ def editable_df(df):
                 )
     sel_row = grid_table['data']
     df_grid = pd.DataFrame(sel_row)
-    dataframe.update(df_grid)  
+    dataframe.update(df_grid, overwrite=True)  
+    dataframe.persist
   csv = convert_df_to_csv(dataframe)
   return csv
 
