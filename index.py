@@ -238,15 +238,15 @@ if st.session_state.key:
       df_changed = clean_transform_df(df)
       check_df(df_changed)
       csv = editable_df(df_changed)
-
-      with st.form("my_form"):
-        email = st.text_input('Informar o email', 'exemplo@email.com')
-        submitted = st.form_submit_button("Enviar e-mail para Steris")
-        st.write('Informar o email para o envio do arquivo para Steris')
-        if submitted:
-          email_sent = send_email(email)
-          if email_sent:
-            st.success('Email enviado com Sucesso!', icon="✅")
+      if csv is not None:
+        with st.form("my_form"):
+          email = st.text_input('Informar o email', 'exemplo@email.com')
+          submitted = st.form_submit_button("Enviar e-mail para Steris")
+          st.write('Informar o email para o envio do arquivo para Steris')
+          if submitted:
+            email_sent = send_email(email)
+            if email_sent:
+              st.success('Email enviado com Sucesso!', icon="✅")
           
     except ValueError as e:
       print('Value Error', e)
