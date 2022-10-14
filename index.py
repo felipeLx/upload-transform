@@ -222,6 +222,15 @@ def check_df(df):
 
 # start render front page if user exist
 if st.session_state.key:
+  with st.form("my_form"):
+  email = st.text_input('Informar o email', 'exemplo@email.com')
+  submitted = st.form_submit_button("Enviar e-mail para Steris")
+  st.write('Informar o email para o envio do arquivo para Steris')
+  if submitted:
+    email_sent = send_email(email)
+    if email_sent:
+      st.success('Email enviado com Sucesso!', icon="✅")
+
   placeholder.empty()
   c = st.container()
   # ---- MAINPAGE ----
@@ -250,13 +259,5 @@ if st.session_state.key:
     except Exception as e:
       print("none of above", e)
       
-with st.form("my_form"):
-  email = st.text_input('Informar o email', 'exemplo@email.com')
-  submitted = st.form_submit_button("Enviar e-mail para Steris")
-  st.write('Informar o email para o envio do arquivo para Steris')
-  if submitted:
-    email_sent = send_email(email)
-    if email_sent:
-      st.success('Email enviado com Sucesso!', icon="✅")
     
     #out = df_changed.to_json(orient='records')[1:-1]
