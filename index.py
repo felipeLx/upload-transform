@@ -76,11 +76,12 @@ def send_email(user_input):
   
   file = 'sellout.csv'# pd.read_csv(attached, index_col=[0], header=0, sep=';', dtype='str')
 # print(file.head())
+  recipients = ['felipe@beanalytic.com.br', 'camila_menezes@steris.com']
   
   message = MIMEMultipart()
   message['Subject'] = f'Arquivo Sellout modificado por {email}'
   message['From'] = 'sistema@beanalytic.com.br'
-  message['To'] = 'felipe@beanalytic.com.br'
+  message['To'] = ', '.join(recipients)
   message['Bcc'] = 'felipe@beanalytic.com.br'
   message.attach(MIMEText('<h1 style="color: blue">Olá, </a><p>Segue em anexo o Sellout pronto para o Tableau Prep / Dashboard.</p>', 'html'))
 
@@ -101,7 +102,7 @@ def send_email(user_input):
       server.login(emailConfig.email, emailConfig.password)
       server.sendmail(
         emailConfig.email, 
-        'felipe@beanalytic.com.br', 
+        recipients, 
         message.as_string())
 
       attachment.close()
