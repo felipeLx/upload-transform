@@ -15,55 +15,6 @@ import smtplib
 firebaseConfig = st.secrets['firebaseConfig']
 emailConfig = st.secrets['emailConfig']
 
-# google drive folder
-# url = 'https://drive.google.com/drive/folders/1jZ5c2974_80uDQwkAnGCequLsgNYWmMx?usp=sharing'
-# path = 'https://drive.google.com/uc?export=download&id='+url.split('/')[-2]
-
-# firebase authentication
-firebase = pyrebase.initialize_app(firebaseConfig)
-auth = firebase.auth()
-
-# database
-db = firebase.database()
-storage = firebase.storage()
-
-st.set_page_config(page_title="Steris Sellout", page_icon="🧊")
-st.image("steris-logo-vector.png", width=200)
-
-placeholder = st.empty()
-
-# initialize state
-if 'key' not in st.session_state:
-  st.session_state.key = False
-
-user = ''
-if ~st.session_state.key:
-  try:
-    with placeholder.form(key="my-form"):
-      options = st.selectbox('Entrar/Registrar', ['Entrar', 'Registrar'])
-      email = st.text_input('Informar e-mail')
-      password = st.text_input('Informar password', type='password')
-      
-      if options:
-        submit = st.form_submit_button('Enviar')
-        if submit:
-          st.session_state.key = True
-          if(options == 'Registrar'):
-            #Signup 
-            user = auth.create_user_with_email_and_password(email, password)
-            st.success('Usuário criado com sucesso')
-            st.balloons()
-          else:
-            # Login
-            user = auth.sign_in_with_email_and_password(email, password)
-            # db.child(user['localId']).child("Handle").set(email)
-            # db.child(user['localId']).child("ID").set(user['localId'])
-  except ValueError:
-    st.error('Verifique os dados: email e senha', icon="⚠️")
-    user = ''
-    st.session_state.key = False
-    placeholder.empty()
-    
 # convert dataframe to csv file
 @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def convert_df_to_csv(df):
@@ -76,7 +27,7 @@ def send_email(user_input):
   
   file = 'sellout.csv'# pd.read_csv(attached, index_col=[0], header=0, sep=';', dtype='str')
 # print(file.head())
-  recipients = ['felipe@beanalytic.com.br', 'camila_menezes@steris.com']
+  recipients = ['felipe@beanalytic.com.br'] #, 'camila_menezes@steris.com'
   
   message = MIMEMultipart()
   message['Subject'] = f'Arquivo Sellout modificado por {email}'
@@ -113,8 +64,8 @@ def send_email(user_input):
     st.warning('Não foi possível enviar o email para Steris, por favor entrar em contato com Steris para informar', icon="⚠️")
     
     
-if st.session_state.key:
-  _funct = st.sidebar.radio(label='Alterar ou Apagar linhas', options=['Alterar', 'Apagar'])
+#if st.session_state.key:
+_funct = st.sidebar.radio(label='Alterar ou Apagar linhas', options=['Alterar', 'Apagar'])
 
 # editable table
 # @st.cache(suppress_st_warning=True, allow_output_mutation=True)
@@ -222,41 +173,42 @@ def check_df(df):
 
 
 # start render front page if user exist
-if st.session_state.key:
-  placeholder.empty()
-  c = st.container()
-  # ---- MAINPAGE ----
-  c.title("Arquivo em formato CSV - Steris")
-  c.markdown("""---""")
-  with open('produto.csv', 'rb') as file:
-    c.download_button('Lista de Produtos Steris', data=file, file_name='Produtos.csv', mime='txt/csv')
+# if st.session_state.key:
+  # placeholder.empty()
+c = st.container()
+# ---- MAINPAGE ----
+c.title("Arquivo em formato CSV - Steris")
+c.markdown("""---""")
+with open('produto.csv', 'rb') as file:
+  c.download_button('Lista de Produtos Steris', data=file, file_name='Produtos.csv', mime='txt/csv')
 
-  uploaded_file = c.file_uploader("Clique aqui para subir o seu arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
+uploaded_file = c.file_uploader("Clique aqui para subir o seu arquivo TXT/CSV", type=["txt", "csv"], on_change=None, key="my-file", accept_multiple_files=False)
 
-  if uploaded_file:
-    df = pd.read_csv(uploaded_file, encoding='latin1', sep=";", dtype='str') #  
-    try:
-      df_changed = clean_transform_df(df)
-      check_df(df_changed)
-      csv = editable_df(df_changed)        
-    except ValueError as e:
-      print('Value Error', e)
-    except NameError:
-      print('Something is going wrong', NameError)
-    except TypeError:
-      print("Type Error", TypeError)
-    except RuntimeError:
-      print("Runtime", RuntimeError)
-    except Exception as e:
-      print("none of above", e)
-    
-  with st.form("my_form"):
-    email = st.text_input('Informar o email', 'exemplo@email.com')
-    submitted = st.form_submit_button("Enviar e-mail para Steris")
-    st.write('Informar o email para o envio do arquivo para Steris')
-    if submitted:
-      email_sent = send_email(email)
-      if email_sent:
-        st.success('Email enviado com Sucesso!', icon="✅")
-    
+if uploaded_file:
+  df = pd.read_csv(uploaded_file, encoding='latin1', sep=";", dtype='str') #  
+  df.to_csv('sellout.csv', sep=";")
+  try:
+    df_changed = clean_transform_df(df)
+    check_df(df_changed)
+    csv = editable_df(df_changed)        
+  except ValueError as e:
+    print('Value Error', e)
+  except NameError:
+    print('Something is going wrong', NameError)
+  except TypeError:
+    print("Type Error", TypeError)
+  except RuntimeError:
+    print("Runtime", RuntimeError)
+  except Exception as e:
+    print("none of above", e)
+  
+with st.form("my_form"):
+  email = st.text_input('Informar o email', 'exemplo@email.com')
+  submitted = st.form_submit_button("Enviar e-mail para Steris")
+  st.write('Informar o email para o envio do arquivo para Steris')
+  if submitted:
+    email_sent = send_email(email)
+    if email_sent:
+      st.success('Email enviado com Sucesso!', icon="✅")
+  
     #out = df_changed.to_json(orient='records')[1:-1]
