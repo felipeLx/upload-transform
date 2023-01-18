@@ -122,23 +122,26 @@ def editable_df(df):
 @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def transform_coluns(df):
   dataframe = df
+  dataframe[dataframe.columns] = dataframe.apply(lambda x: x.str.strip())
+  dataframe[dataframe.columns] = dataframe.apply(lambda x: x.str.replace("[/;-]", ""))
   dataframe['NFE_DATAEMISSAO'] = dataframe['NFE_DATAEMISSAO'].str.replace("00:00", "")
-  # dataframe['NFE_DATAEMISSAO'] = pd.to_datetime(dataframe['NFE_DATAEMISSAO'], format='%d/%m/%Y')
-  dataframe['NFE_DEST_CNPJ'] = dataframe['NFE_DEST_CNPJ'].str.replace("[./-]", "")
+  dataframe['NFE_DEST_CNPJ'] = dataframe['NFE_DEST_CNPJ'].str.replace("[.,]", "")
   dataframe['DEST_CODIGOCFOP'] = dataframe['DEST_CODIGOCFOP'].str.replace("[.,]", "")
   dataframe['DEST_CODIGOCFOP'] = dataframe['DEST_CODIGOCFOP'].str[-4:]
-  dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("[.,-<>()/0123456789\t]", "")
-  dataframe['DEST_CODIGOPRODUTO_STERIS'] = dataframe['DEST_CODIGOPRODUTO_STERIS'].str.strip()
-  dataframe['DEST_CODIGOPRODUTO_STERIS'] = dataframe['DEST_CODIGOPRODUTO_STERIS'].str.replace("-", "")
-  dataframe['DEST_CODIGOPRODUTO_STERIS'] = dataframe['DEST_CODIGOPRODUTO_STERIS'].str.replace(".", "")
+  dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("[.,-<>()/0123456789\t]]", "")
+  #dataframe['DEST_CODIGOPRODUTO_STERIS'] = dataframe['DEST_CODIGOPRODUTO_STERIS'].str.replace("[.,-]", "")
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ê", "E")
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ã", "A")
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Õ", "O")
   dataframe['NFE_DEST_RAZAOSOCIAL'] = dataframe['NFE_DEST_RAZAOSOCIAL'].str.replace("Ç", "C")
-  dataframe['DEST_QTDEPRODUTO'] = dataframe['DEST_QTDEPRODUTO'].str.replace(",", ".").astype(float)
+  dataframe['DEST_QTDEPRODUTO'] = dataframe['DEST_QTDEPRODUTO'].str.replace(",", ".")
+  #dataframe['DEST_QTDEPRODUTO'] = dataframe['DEST_QTDEPRODUTO'].astype(float)
   dataframe = dataframe.rename(columns={'NFE_DEST_RAZAOSOCIAL': 'RAZAO_SOCIAL'})
-  cfop_list = ['5', '6', '']
-  dataframe = dataframe[dataframe['DEST_CODIGOCFOP'].astype(str).str[0] in cfop_list]
+  cfop_list = ['51', '52', '53', '54', '61', '62', '63', '64', '', '0']
+  dataframe['Matches'] = [any(w[0:2] in cfop_list for w in x.split()) for x in dataframe['DEST_CODIGOCFOP']]
+  dataframe = dataframe[dataframe['Matches'] == True]
+  dataframe = dataframe[['Dealer/Rep', 'NFE_DATAEMISSAO',	'NFE_NRONOTAFISCAL', 'NFE_DEST_CNPJ',	'RAZAO_SOCIAL','NFE_DEST_ESTADO', 'DEST_QTDEPRODUTO', 'DEST_CODIGOPRODUTO_STERIS', 'DEST_CODIGOCFOP']]
+  #print(dataframe.info())
   return dataframe
 
 # data clean and transformation
